@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Summary - OrganMatch{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-check-circle" style="background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i> Upload Successful
+            </h1>
+            <p class="page-subtitle">Review your newly uploaded donors and recipients</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <div class="action-button-group" style="justify-content: flex-end;">
+                <a href="{{ url_for('upload') }}" class="btn btn-outline-gradient">
+                    <i class="fas fa-upload"></i> Upload More
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-gradient">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if donors %}
+<div class="glass-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="card-title mb-0">
+            <i class="fas fa-hand-holding-heart text-primary"></i> Uploaded Donors ({{ donors|length }})
+        </h3>
+        <a href="{{ url_for('donors') }}" class="btn btn-sm btn-outline-gradient">
+            <i class="fas fa-list"></i> View All Donors
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Blood Group</th>
+                    <th>Organ Type</th>
+                    <th>BMI</th>
+                    <th>HLA Typing</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donor in donors %}
+                <tr>
+                    <td><strong>#{{ donor.id }}</strong></td>
+                    <td><strong>{{ donor.name }}</strong></td>
+                    <td>{{ donor.age or 'N/A' }}</td>
+                    <td><span class="badge-danger">{{ donor.blood_group or 'N/A' }}</span></td>
+                    <td><span class="badge-info">{{ donor.organ_type }}</span></td>
+                    <td>{{ donor.bmi or 'N/A' }}</td>
+                    <td class="text-truncate" style="max-width: 150px;">{{ donor.hla_typing or 'N/A' }}</td>
+                    <td>
+                        {% if donor.latitude and donor.longitude %}
+                            <i class="fas fa-map-marker-alt text-danger"></i> {{ "%.2f"|format(donor.latitude) }}, {{ "%.2f"|format(donor.longitude) }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if recipients %}
+<div class="glass-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="card-title mb-0">
+            <i class="fas fa-user-injured text-success"></i> Uploaded Recipients ({{ recipients|length }})
+        </h3>
+        <a href="{{ url_for('recipients') }}" class="btn btn-sm btn-outline-gradient" style="border-color: #10b981; color: #10b981;">
+            <i class="fas fa-list"></i> View All Recipients
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Blood Group</th>
+                    <th>Organ Needed</th>
+                    <th>BMI</th>
+                    <th>HLA Typing</th>
+                    <th>Location</th>
+                    <th>Urgency</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recipient in recipients %}
+                <tr>
+                    <td><strong>#{{ recipient.id }}</strong></td>
+                    <td><strong>{{ recipient.name }}</strong></td>
+                    <td>{{ recipient.age or 'N/A' }}</td>
+                    <td><span class="badge-danger">{{ recipient.blood_group or 'N/A' }}</span></td>
+                    <td><span class="badge-success">{{ recipient.organ_needed }}</span></td>
+                    <td>{{ recipient.bmi or 'N/A' }}</td>
+                    <td class="text-truncate" style="max-width: 150px;">{{ recipient.hla_typing or 'N/A' }}</td>
+                    <td>
+                        {% if recipient.latitude and recipient.longitude %}
+                            <i class="fas fa-map-marker-alt text-success"></i> {{ "%.2f"|format(recipient.latitude) }}, {{ "%.2f"|format(recipient.longitude) }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if recipient.urgency_level == 4 %}
+                            <span class="badge-danger">Critical (4)</span>
+                        {% elif recipient.urgency_level == 3 %}
+                            <span class="badge-warning">High (3)</span>
+                        {% elif recipient.urgency_level == 2 %}
+                            <span class="badge-info">Medium (2)</span>
+                        {% else %}
+                            <span class="badge-success">Low (1)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="glass-card mt-4" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));">
+    <div class="text-center py-4">
+        <i class="fas fa-info-circle fa-2x mb-3" style="color: #667eea;"></i>
+        <h5>What's Next?</h5>
+        <p class="text-muted mb-3">Your data has been successfully uploaded and the ML model is being retrained with the new data.</p>
+        <div class="action-button-group justify-content-center">
+            <a href="{{ url_for('matches') }}" class="btn btn-gradient">
+                <i class="fas fa-heartbeat"></i> View Compatibility Matches
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-gradient">
+                <i class="fas fa-chart-line"></i> View Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

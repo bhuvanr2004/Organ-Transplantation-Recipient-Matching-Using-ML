@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Distances - OrganMatch{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-route" style="background: linear-gradient(135deg, #2dd4bf, #0284c7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i> Donor-Recipient Distances
+    </h1>
+    <p class="page-subtitle">View geographical distances between donors and recipients based on GPS coordinates</p>
+</div>
+
+{% if distances %}
+<div class="glass-panel mb-4" style="background: rgba(45, 212, 191, 0.1); border-left: 4px solid #2dd4bf;">
+    <i class="fas fa-info-circle"></i> Showing <strong>{{ distances|length }}</strong> donor-recipient pairs. Distances calculated using geodesic measurement.
+</div>
+
+<div class="glass-card mb-4">
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th>Donor</th>
+                    <th>Donor Location</th>
+                    <th>Recipient</th>
+                    <th>Recipient Location</th>
+                    <th>Distance (km)</th>
+                    <th>Distance (mi)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for distance in distances %}
+                <tr>
+                    <td>
+                        <strong>{{ distance.donor.name }}</strong><br>
+                        <small>
+                            <span class="badge-danger">{{ distance.donor.blood_group }}</span>
+                            <span class="badge-info">{{ distance.donor.organ_type }}</span>
+                        </small>
+                    </td>
+                    <td>
+                        <i class="fas fa-map-marker-alt" style="color: #667eea;"></i>
+                        {{ "%.4f"|format(distance.donor.latitude) }}, {{ "%.4f"|format(distance.donor.longitude) }}
+                    </td>
+                    <td>
+                        <strong>{{ distance.recipient.name }}</strong><br>
+                        <small>
+                            <span class="badge-danger">{{ distance.recipient.blood_group }}</span>
+                            <span class="badge-success">{{ distance.recipient.organ_needed }}</span>
+                        </small>
+                    </td>
+                    <td>
+                        <i class="fas fa-map-marker-alt" style="color: #10b981;"></i>
+                        {{ "%.4f"|format(distance.recipient.latitude) }}, {{ "%.4f"|format(distance.recipient.longitude) }}
+                    </td>
+                    <td>
+                        <strong style="font-size: 1.1rem;">{{ distance.distance_km }} km</strong>
+                    </td>
+                    <td>
+                        {{ "%.2f"|format(distance.distance_km * 0.621371) }} mi
+                    </td>
+                    <td>
+                        {% if distance.distance_km < 100 %}
+                            <span class="badge-success">
+                                <i class="fas fa-check-circle"></i> Very Close
+                            </span>
+                        {% elif distance.distance_km < 500 %}
+                            <span class="badge-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Moderate
+                            </span>
+                        {% else %}
+                            <span class="badge-danger">
+                                <i class="fas fa-times-circle"></i> Far
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h3 class="section-title">
+    <i class="fas fa-chart-bar"></i> Distance Summary
+</h3>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="stat-card success">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Very Close (&lt; 100 km)</div>
+                    <div class="stat-number" style="color: #10b981;">{{ distances|selectattr('distance_km', 'lt', 100)|list|length }}</div>
+                </div>
+                <div class="icon-box" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card warning">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Moderate (100-500 km)</div>
+                    <div class="stat-number" style="color: #f59e0b;">{{ distances|selectattr('distance_km', 'ge', 100)|selectattr('distance_km', 'lt', 500)|list|length }}</div>
+                </div>
+                <div class="icon-box" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="border-left-color: #ef4444;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Far (&gt; 500 km)</div>
+                    <div class="stat-number" style="color: #ef4444;">{{ distances|selectattr('distance_km', 'ge', 500)|list|length }}</div>
+                </div>
+                <div class="icon-box" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="glass-panel" style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 3rem; text-align: center;">
+    <i class="fas fa-map-marked-alt fa-4x mb-4" style="color: #f59e0b; opacity: 0.5;"></i>
+    <h4 class="mb-3">No Distance Data Available</h4>
+    <p class="text-muted mb-4">Please ensure donors and recipients have their GPS locations set.</p>
+    
+    <div class="action-button-group" style="justify-content: center;">
+        <a href="{{ url_for('donors') }}" class="btn btn-gradient">
+            <i class="fas fa-hand-holding-heart"></i> Manage Donors
+        </a>
+        <a href="{{ url_for('recipients') }}" class="btn btn-outline-gradient">
+            <i class="fas fa-user-injured"></i> Manage Recipients
+        </a>
+    </div>
+    
+    <div class="mt-4 pt-4" style="border-top: 1px solid rgba(0,0,0,0.1);">
+        <p class="mb-2"><strong>How to set location:</strong></p>
+        <ul style="list-style: none; padding: 0; text-align: left; max-width: 500px; margin: 0 auto;">
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Add location when creating donors (latitude and longitude fields)</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Add location when creating recipients (latitude and longitude fields)</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>View each location by clicking "View Location" button on Donors/Recipients pages</li>
+        </ul>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

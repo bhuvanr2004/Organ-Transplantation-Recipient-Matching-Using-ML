@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "alexcvzz.vscode-sqlite",
+    "samuelcolvin.jinjahtml",
+    "wholroyd.jinja",
+    "ms-python.debugpy",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}

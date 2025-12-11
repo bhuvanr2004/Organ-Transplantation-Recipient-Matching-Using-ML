@@ -1,0 +1,11 @@
+id,name,age,blood_group,organ_type,bmi,hla_typing,latitude,longitude,organ_storage_hours,organ_size,diabetes,hypertension,smoking,alcohol
+1,John Doe,45,O+,Heart,24.5,"A1,B8,DR3",28.7041,77.1025,4,250,0,0,0,0
+2,Sarah Smith,32,A+,Kidney,22.3,"A2,B7,DR4",28.5355,77.3910,6,180,0,1,0,0
+3,Michael Johnson,50,B+,Liver,26.8,"A3,B8,DR2",28.6139,77.2090,3,1200,1,0,1,0
+4,Emily Davis,28,AB+,Kidney,21.1,"A1,B7,DR3",28.4595,77.0266,5,175,0,0,0,0
+5,Robert Wilson,55,O-,Heart,27.5,"A2,B8,DR4",28.6692,77.4538,8,260,0,1,0,1
+6,Lisa Brown,38,A-,Liver,23.4,"A1,B7,DR2",28.5244,77.1855,4,1150,0,0,0,0
+7,David Martinez,42,B-,Kidney,25.2,"A3,B8,DR3",28.6289,77.3803,7,185,1,1,0,0
+8,Jennifer Taylor,31,AB-,Heart,20.8,"A2,B7,DR4",28.7041,77.1025,5,245,0,0,0,0
+9,James Anderson,48,O+,Liver,28.1,"A1,B8,DR2",28.5355,77.3910,6,1180,0,0,1,1
+10,Mary Thomas,36,A+,Kidney,22.7,"A3,B7,DR3",28.6139,77.2090,4,170,0,0,0,0

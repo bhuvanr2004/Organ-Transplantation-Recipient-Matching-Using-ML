@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - OrganMatch{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-chart-line" style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i> Dashboard
+    </h1>
+    <p class="page-subtitle">Real-time overview of organ donation matching system</p>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Donors</div>
+                    <div class="stat-number">{{ donor_count }}</div>
+                </div>
+                <div class="icon-box">
+                    <i class="fas fa-hand-holding-heart"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="stat-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Recipients</div>
+                    <div class="stat-number">{{ recipient_count }}</div>
+                </div>
+                <div class="icon-box" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-user-injured"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="stat-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Possible Matches</div>
+                    <div class="stat-number">{{ donor_count * recipient_count }}</div>
+                </div>
+                <div class="icon-box" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-link"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-chart-pie"></i> Organ Distribution
+            </h3>
+            <canvas id="organChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-tasks"></i> Quick Actions
+            </h3>
+            <div class="action-button-group">
+                <a href="{{ url_for('add_donor') }}" class="btn btn-gradient w-100">
+                    <i class="fas fa-plus"></i> Add New Donor
+                </a>
+                <a href="{{ url_for('add_recipient') }}" class="btn btn-outline-gradient w-100">
+                    <i class="fas fa-plus"></i> Add New Recipient
+                </a>
+                <a href="{{ url_for('upload') }}" class="btn btn-ghost w-100">
+                    <i class="fas fa-upload"></i> Bulk Upload CSV
+                </a>
+                <a href="{{ url_for('matches') }}" class="btn btn-gradient w-100">
+                    <i class="fas fa-link"></i> View All Matches
+                </a>
+                <button onclick="retrainModel()" class="btn btn-outline-gradient w-100">
+                    <i class="fas fa-sync"></i> Retrain ML Model
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-chart-line"></i> Monthly Match Statistics
+            </h3>
+            <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-clock"></i> Recent Donors
+            </h3>
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Organ</th>
+                            <th>Blood Group</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donor in recent_donors %}
+                        <tr>
+                            <td><strong>{{ donor.name }}</strong></td>
+                            <td><span class="badge-info">{{ donor.organ_type }}</span></td>
+                            <td>{{ donor.blood_group or 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                No donors yet
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-clock"></i> Recent Recipients
+            </h3>
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Organ Needed</th>
+                            <th>Blood Group</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for recipient in recent_recipients %}
+                        <tr>
+                            <td><strong>{{ recipient.name }}</strong></td>
+                            <td><span class="badge-success">{{ recipient.organ_needed }}</span></td>
+                            <td>{{ recipient.blood_group or 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                No recipients yet
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const organData = {{ organ_distribution | tojson }};
+const labels = Object.keys(organData);
+const data = Object.values(organData);
+
+const ctx = document.getElementById('organChart').getContext('2d');
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: labels,
+        datasets: [{
+            data: data,
+            backgroundColor: [
+                '#667eea',
+                '#764ba2',
+                '#2dd4bf',
+                '#10b981',
+                '#f59e0b',
+                '#f87171'
+            ],
+            borderWidth: 3,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    font: {
+                        size: 12,
+                        family: "'Segoe UI', sans-serif"
+                    }
+                }
+            }
+        }
+    }
+});
+
+fetch('/api/monthly')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text();
+    })
+    .then(text => {
+        if (!text || text.trim() === '') {
+            throw new Error('Empty response');
+        }
+        return JSON.parse(text);
+    })
+    .then(data => {
+        if (!data || !data.months || data.months.length === 0) {
+            console.warn('No monthly statistics available');
+            return;
+        }
+        
+        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: data.months,
+                datasets: [
+                    {
+                        label: 'Match Count',
+                        data: data.match_counts || [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        yAxisID: 'y',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Average Compatibility (%)',
+                        data: data.average_compatibility || [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        yAxisID: 'y1',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            font: {
+                                family: "'Segoe UI', sans-serif",
+                                size: 13
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Number of Matches',
+                            font: {
+                                family: "'Segoe UI', sans-serif",
+                                size: 12
+                            }
+                        },
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Average Compatibility (%)',
+                            font: {
+                                family: "'Segoe UI', sans-serif",
+                                size: 12
+                            }
+                        },
+                        beginAtZero: true,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error loading monthly stats:', error);
+        document.getElementById('monthlyChart').parentElement.innerHTML = 
+            '<div class="alert alert-info"><i class="fas fa-info-circle"></i> Monthly statistics will appear here once matches are recorded.</div>';
+    });
+
+function retrainModel() {
+    if (confirm('This will retrain the ML model with current data. Continue?')) {
+        const button = event.target;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Retraining...';
+        
+        fetch('/api/retrain', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || data.error);
+                location.reload();
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync"></i> Retrain ML Model';
+            });
+    }
+}
+</script>
+{% endblock %}

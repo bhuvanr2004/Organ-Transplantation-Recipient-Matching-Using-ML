@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Recipients - OrganMatch{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h1 class="page-title">
+                <i class="fas fa-user-injured" style="background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i> Organ Recipients
+            </h1>
+            <p class="page-subtitle">Manage and track organ recipient information</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <div class="action-button-group" style="justify-content: flex-end;">
+                <a href="{{ url_for('export_recipients') }}" class="btn btn-outline-gradient">
+                    <i class="fas fa-download"></i> Export CSV
+                </a>
+                <a href="{{ url_for('distances') }}" class="btn btn-outline-gradient">
+                    <i class="fas fa-route"></i> View Distances
+                </a>
+                <a href="{{ url_for('add_recipient') }}" class="btn btn-gradient" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-plus"></i> Add Recipient
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card">
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Blood Group</th>
+                    <th>Organ Needed</th>
+                    <th>BMI</th>
+                    <th>HLA Typing</th>
+                    <th>Urgency</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recipient in recipients %}
+                <tr>
+                    <td><strong>#{{ recipient.id }}</strong></td>
+                    <td><strong>{{ recipient.name }}</strong></td>
+                    <td>{{ recipient.age or 'N/A' }}</td>
+                    <td><span class="badge-danger">{{ recipient.blood_group or 'N/A' }}</span></td>
+                    <td><span class="badge-success">{{ recipient.organ_needed }}</span></td>
+                    <td>{{ recipient.bmi or 'N/A' }}</td>
+                    <td class="text-truncate" style="max-width: 150px;">{{ recipient.hla_typing or 'N/A' }}</td>
+                    <td>
+                        {% set urgency = recipient.urgency_level %}
+                        {% if urgency == 10 %}
+                            <span class="compatibility-high"><strong>{{ urgency }}/10</strong> <i class="fas fa-check-circle"></i></span>
+                        {% elif urgency >= 8 %}
+                            <span class="compatibility-medium"><strong>{{ urgency }}/10</strong> <i class="fas fa-exclamation"></i></span>
+                        {% elif urgency >= 5 %}
+                            <span class="compatibility-medium"><strong>{{ urgency }}/10</strong></span>
+                        {% else %}
+                            <span class="compatibility-low"><strong>{{ urgency }}/10</strong></span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if recipient.latitude and recipient.longitude %}
+                            <button 
+                                class="btn btn-sm btn-gradient view-location-btn" 
+                                style="background: linear-gradient(135deg, #10b981, #059669);"
+                                data-latitude="{{ recipient.latitude }}" 
+                                data-longitude="{{ recipient.longitude }}" 
+                                data-name="{{ recipient.name }}"
+                                title="View location on map">
+                                <i class="fas fa-map-marked-alt"></i> View Location
+                            </button>
+                        {% else %}
+                            <button 
+                                class="btn btn-sm btn-outline-secondary" 
+                                disabled
+                                title="Location not set">
+                                <i class="fas fa-map-marker-alt"></i> No Location
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-5">
+                        <i class="fas fa-inbox fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
+                        <h5>No recipients found</h5>
+                        <p><a href="{{ url_for('add_recipient') }}" class="btn btn-gradient mt-2" style="background: linear-gradient(135deg, #10b981, #059669);"><i class="fas fa-plus"></i> Add your first recipient</a></p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/location.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.view-location-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const latitude = parseFloat(this.getAttribute('data-latitude'));
+            const longitude = parseFloat(this.getAttribute('data-longitude'));
+            const name = this.getAttribute('data-name');
+            showLocationModal(latitude, longitude, name);
+        });
+    });
+});
+</script>
+{% endblock %}

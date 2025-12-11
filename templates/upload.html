@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Upload - OrganMatch{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-upload" style="background: linear-gradient(135deg, #38bdf8, #0284c7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i> Bulk CSV Upload
+            </h1>
+            <p class="page-subtitle">Import multiple donors and recipients at once using CSV files</p>
+        </div>
+
+        <div class="glass-card">
+            <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+                <h3 class="section-title">
+                    <i class="fas fa-file-csv"></i> Upload Files
+                </h3>
+                
+                <div class="mb-4">
+                    <label class="form-label">
+                        <i class="fas fa-hand-holding-heart" style="color: #667eea;"></i> Donors CSV File
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-file"></i></span>
+                        <input type="file" class="form-control" name="donor_file" accept=".csv">
+                    </div>
+                    <div class="form-text">Upload a CSV file containing donor information (optional)</div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">
+                        <i class="fas fa-user-injured" style="color: #10b981;"></i> Recipients CSV File
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-file"></i></span>
+                        <input type="file" class="form-control" name="recipient_file" accept=".csv">
+                    </div>
+                    <div class="form-text">Upload a CSV file containing recipient information (optional)</div>
+                </div>
+                
+                <div class="glass-panel" style="background: rgba(56, 189, 248, 0.1); border-left: 4px solid #38bdf8; margin-bottom: 2rem;">
+                    <h5 style="color: #0284c7; margin-bottom: 1rem;"><i class="fas fa-info-circle"></i> CSV Format Requirements</h5>
+                    
+                    <p class="mb-2" style="font-weight: 600;">Donors CSV Columns:</p>
+                    <code style="display: block; padding: 12px; background: rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.85rem;">name, age, blood_group, organ_type, bmi, hla_typing, latitude, longitude, organ_storage_hours, organ_size, diabetes, hypertension, smoking, alcohol</code>
+                    
+                    <p class="mb-2" style="font-weight: 600;">Recipients CSV Columns:</p>
+                    <code style="display: block; padding: 12px; background: rgba(0,0,0,0.05); border-radius: 8px; font-size: 0.85rem;">name, age, blood_group, organ_needed, bmi, hla_typing, latitude, longitude, organ_size_needed, diabetes, hypertension, urgency_level</code>
+                </div>
+                
+                <div class="action-button-group">
+                    <button type="submit" class="btn btn-gradient btn-lg" style="background: linear-gradient(135deg, #38bdf8, #0284c7);">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Files
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-gradient btn-lg">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="glass-card mt-4">
+            <h3 class="section-title">
+                <i class="fas fa-download"></i> Sample CSV Templates
+            </h3>
+            <p class="text-muted mb-4">Download sample CSV files to see the expected format and structure</p>
+            <div class="action-button-group">
+                <a href="/data/donors_sample.csv" class="btn btn-outline-gradient" download>
+                    <i class="fas fa-download"></i> Download Donors Sample
+                </a>
+                <a href="/data/recipients_sample.csv" class="btn btn-outline-gradient" style="border-color: #10b981; color: #10b981;" download>
+                    <i class="fas fa-download"></i> Download Recipients Sample
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+
+{% block title %}Model Evaluation - OrganMatch{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-brain" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i> ML Model Evaluation
+    </h1>
+    <p class="page-subtitle">Random Forest model performance metrics and feature importance analysis</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        {% if not model_exists %}
+        <div class="alert alert-warning mb-4">
+            <i class="fas fa-exclamation-triangle"></i> <strong>Model Not Trained:</strong> 
+            Please train the model first to see evaluation metrics.
+            <button onclick="retrainModel()" class="btn btn-sm btn-primary mt-2">
+                <i class="fas fa-sync"></i> Train Model Now
+            </button>
+        </div>
+        {% elif metrics and not has_sufficient_data %}
+        <div class="alert alert-warning mb-4">
+            <i class="fas fa-exclamation-triangle"></i> <strong>Limited Data:</strong> 
+            You have less than 5 donor-recipient pairs. Some advanced metrics (Confusion Matrix, ROC Curve) are not available. Add more data for complete evaluation.
+        </div>
+        {% elif not metrics %}
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle"></i> <strong>Note:</strong> 
+            No evaluation data available. Add donors and recipients to generate evaluation metrics.
+        </div>
+        {% endif %}
+        
+        {% if metrics %}
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card primary">
+                    <div class="stat-label">Total Samples</div>
+                    <div class="stat-number">{{ metrics.n_samples }}</div>
+                    <p class="text-muted mb-0 mt-2">Donor-Recipient Pairs</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card success">
+                    <div class="stat-label">Features Used</div>
+                    <div class="stat-number">{{ metrics.n_features }}</div>
+                    <p class="text-muted mb-0 mt-2">Input Variables</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card warning">
+                    <div class="stat-label">AUC Score</div>
+                    <div class="stat-number">{{ "%.3f"|format(metrics.roc_curve.auc_score) if metrics.roc_curve else 'N/A' }}</div>
+                    <p class="text-muted mb-0 mt-2">ROC Area Under Curve</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card teal">
+                    <div class="stat-label">Accuracy</div>
+                    <div class="stat-number">{{ "%.1f%%"|format(metrics.classification_report['accuracy'] * 100) if metrics.classification_report and 'accuracy' in metrics.classification_report else 'N/A' }}</div>
+                    <p class="text-muted mb-0 mt-2">Overall Accuracy</p>
+                </div>
+            </div>
+        </div>
+
+        {% if metrics.confusion_matrix %}
+        <div class="glass-card mb-4">
+            <h3 class="section-title">
+                <i class="fas fa-th"></i> Confusion Matrix
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id="confusionMatrixChart" height="300"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Predicted Negative</th>
+                                    <th>Predicted Positive</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Actual Negative</strong></td>
+                                    <td><span class="badge bg-success">{{ metrics.confusion_matrix[0][0] }}</span> (True Negative)</td>
+                                    <td><span class="badge bg-danger">{{ metrics.confusion_matrix[0][1] }}</span> (False Positive)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Actual Positive</strong></td>
+                                    <td><span class="badge bg-danger">{{ metrics.confusion_matrix[1][0] }}</span> (False Negative)</td>
+                                    <td><span class="badge bg-success">{{ metrics.confusion_matrix[1][1] }}</span> (True Positive)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> <strong>Interpretation:</strong><br>
+                        True Positives/Negatives are correct predictions.<br>
+                        False Positives/Negatives are incorrect predictions.
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if metrics.roc_curve %}
+        <div class="glass-card mb-4">
+            <h3 class="section-title">
+                <i class="fas fa-chart-line"></i> ROC Curve (Receiver Operating Characteristic)
+            </h3>
+            <div class="row">
+                <div class="col-md-8">
+                    <canvas id="rocCurveChart" height="250"></canvas>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card primary mb-3">
+                        <div class="stat-label">AUC Score</div>
+                        <div class="stat-number" style="font-size: 2.5rem;">{{ "%.4f"|format(metrics.roc_curve.auc_score) }}</div>
+                    </div>
+                    <div class="alert alert-success">
+                        <strong>Performance:</strong><br>
+                        {% if metrics.roc_curve.auc_score >= 0.9 %}
+                        <i class="fas fa-star text-warning"></i> Excellent (0.9-1.0)
+                        {% elif metrics.roc_curve.auc_score >= 0.8 %}
+                        <i class="fas fa-check text-success"></i> Good (0.8-0.9)
+                        {% elif metrics.roc_curve.auc_score >= 0.7 %}
+                        <i class="fas fa-thumbs-up text-info"></i> Fair (0.7-0.8)
+                        {% else %}
+                        <i class="fas fa-exclamation-triangle text-warning"></i> Needs Improvement (<0.7)
+                        {% endif %}
+                    </div>
+                    <p class="text-muted" style="font-size: 0.9rem;">
+                        AUC measures the model's ability to distinguish between compatible and incompatible matches. Higher is better (max = 1.0).
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if metrics.classification_report %}
+        <div class="glass-card mb-4">
+            <h3 class="section-title">
+                <i class="fas fa-chart-bar"></i> Classification Metrics
+            </h3>
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>F1-Score</th>
+                            <th>Support</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if '0' in metrics.classification_report %}
+                        <tr>
+                            <td><strong>Incompatible (0)</strong></td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['0']['precision']) }}</td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['0']['recall']) }}</td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['0']['f1-score']) }}</td>
+                            <td>{{ metrics.classification_report['0']['support'] }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if '1' in metrics.classification_report %}
+                        <tr>
+                            <td><strong>Compatible (1)</strong></td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['1']['precision']) }}</td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['1']['recall']) }}</td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['1']['f1-score']) }}</td>
+                            <td>{{ metrics.classification_report['1']['support'] }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr style="border-top: 2px solid var(--border-color);">
+                            <td><strong>Macro Avg</strong></td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['macro avg']['precision']) }}</td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['macro avg']['recall']) }}</td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['macro avg']['f1-score']) }}</td>
+                            <td>{{ metrics.classification_report['macro avg']['support'] }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Weighted Avg</strong></td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['weighted avg']['precision']) }}</td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['weighted avg']['recall']) }}</td>
+                            <td>{{ "%.3f"|format(metrics.classification_report['weighted avg']['f1-score']) }}</td>
+                            <td>{{ metrics.classification_report['weighted avg']['support'] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="alert alert-primary">
+                        <strong><i class="fas fa-crosshairs"></i> Precision:</strong> Of all predicted matches, what % were actually compatible?
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="alert alert-success">
+                        <strong><i class="fas fa-search"></i> Recall:</strong> Of all actual compatible pairs, what % did we find?
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-balance-scale"></i> F1-Score:</strong> Harmonic mean of precision and recall (balanced measure).
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        {% if model_exists %}
+        <div class="glass-card mb-4">
+            <h3 class="section-title">
+                <i class="fas fa-chart-bar"></i> Feature Importance
+            </h3>
+            {% if feature_importance and feature_importance|length > 0 %}
+                <canvas id="featureChart" height="150"></canvas>
+                
+                <div class="mt-4">
+                    <h5 style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem;">Feature Importance Values:</h5>
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>Importance Score</th>
+                                    <th>Impact</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature, score in feature_importance.items() %}
+                                <tr>
+                                    <td><strong>{{ feature }}</strong></td>
+                                    <td>{{ "%.4f"|format(score) }}</td>
+                                    <td>
+                                        {% if score > 0.15 %}
+                                            <span class="badge-success">High</span>
+                                        {% elif score > 0.08 %}
+                                            <span class="badge-warning">Medium</span>
+                                        {% else %}
+                                            <span class="badge-info">Low</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> Model needs to be trained first to see feature importance.
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-cog"></i> Current Model Configuration
+            </h3>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="stat-card primary">
+                        <div class="stat-label">Algorithm</div>
+                        <div class="stat-number" style="font-size: 1.5rem;">Random Forest</div>
+                        <p class="text-muted mb-0 mt-2">Ensemble learning method for classification</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card success">
+                        <div class="stat-label">Number of Trees</div>
+                        <div class="stat-number">{{ config.n_estimators }}</div>
+                        <p class="text-muted mb-0 mt-2">Decision trees in the forest</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card warning">
+                        <div class="stat-label">Max Depth</div>
+                        <div class="stat-number">{{ config.max_depth }}</div>
+                        <p class="text-muted mb-0 mt-2">Maximum tree depth level</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card teal">
+                        <div class="stat-label">Min Samples Split</div>
+                        <div class="stat-number">{{ config.min_samples_split }}</div>
+                        <p class="text-muted mb-0 mt-2">Minimum samples to split a node</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-button-group mt-4">
+                <a href="{{ url_for('settings') }}" class="btn btn-gradient btn-lg">
+                    <i class="fas fa-sliders-h"></i> Adjust Model Parameters
+                </a>
+                <button onclick="retrainModel()" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-sync"></i> Retrain with Current Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% if feature_importance %}
+<script>
+const featureData = {{ feature_importance | tojson }};
+const features = Object.keys(featureData);
+const importance = Object.values(featureData);
+
+const ctx = document.getElementById('featureChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: features,
+        datasets: [{
+            label: 'Feature Importance',
+            data: importance,
+            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+            borderColor: '#667eea',
+            borderWidth: 2,
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Importance Score'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Features'
+                }
+            }
+        }
+    }
+});
+
+{% if metrics.confusion_matrix %}
+const cm = {{ metrics.confusion_matrix | tojson }};
+const cmCtx = document.getElementById('confusionMatrixChart').getContext('2d');
+
+const cmData = {
+    labels: ['Predicted Negative', 'Predicted Positive'],
+    datasets: [
+        {
+            label: 'Actual Negative',
+            data: [cm[0][0], cm[0][1]],
+            backgroundColor: ['rgba(34, 197, 94, 0.8)', 'rgba(239, 68, 68, 0.8)']
+        },
+        {
+            label: 'Actual Positive',
+            data: [cm[1][0], cm[1][1]],
+            backgroundColor: ['rgba(239, 68, 68, 0.8)', 'rgba(34, 197, 94, 0.8)']
+        }
+    ]
+};
+
+new Chart(cmCtx, {
+    type: 'bar',
+    data: cmData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Confusion Matrix Visualization'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Count'
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+{% if metrics.roc_curve %}
+const fpr = {{ metrics.roc_curve.fpr | tojson }};
+const tpr = {{ metrics.roc_curve.tpr | tojson }};
+
+const rocCtx = document.getElementById('rocCurveChart').getContext('2d');
+new Chart(rocCtx, {
+    type: 'line',
+    data: {
+        datasets: [{
+            label: 'ROC Curve (AUC = ' + {{ metrics.roc_curve.auc_score | round(4) }} + ')',
+            data: fpr.map((x, i) => ({x: x, y: tpr[i]})),
+            borderColor: '#8b5cf6',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 0
+        },
+        {
+            label: 'Random Classifier (AUC = 0.5)',
+            data: [{x: 0, y: 0}, {x: 1, y: 1}],
+            borderColor: '#94a3b8',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'bottom'
+            }
+        },
+        scales: {
+            x: {
+                type: 'linear',
+                min: 0,
+                max: 1,
+                title: {
+                    display: true,
+                    text: 'False Positive Rate'
+                }
+            },
+            y: {
+                min: 0,
+                max: 1,
+                title: {
+                    display: true,
+                    text: 'True Positive Rate'
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function retrainModel() {
+    if (confirm('This will retrain the ML model with current data. Continue?')) {
+        const button = event.target;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Retraining...';
+        
+        fetch('/api/retrain', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || data.error);
+                location.reload();
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync"></i> Retrain Model';
+            });
+    }
+}
+</script>
+{% else %}
+<script>
+function retrainModel() {
+    if (confirm('This will train the ML model with current data. Continue?')) {
+        const button = event.target;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Training...';
+        
+        fetch('/api/retrain', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || data.error);
+                location.reload();
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync"></i> Train Model Now';
+            });
+    }
+}
+</script>
+{% endif %}
+{% endblock %}
