@@ -1,4 +1,6 @@
-# 🫀 OrganMatch - AI-Powered Organ Donation Matching Platform
+# 🫀Organ Transplantation & Recipient Matching Using ML 
+
+##OrganMatch - AI-Powered Organ Donation Matching Platform
 
 A production-ready, full-stack web application that uses **Machine Learning** to predict donor-recipient compatibility for organ transplants. Built with Flask, SQLAlchemy, scikit-learn, and modern web technologies.
 
