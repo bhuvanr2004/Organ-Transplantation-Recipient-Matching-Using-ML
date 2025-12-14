@@ -4,6 +4,17 @@ A production-ready, full-stack web application that uses **Machine Learning** to
 
 **Status:** Production-Ready | **Version:** 1.0 | **License:** MIT
 
+## ⚠️ IMPORTANT NOTICE
+
+The `app.py` file within the `ml` directory has been **intentionally removed** to protect the project’s intellectual work and to prevent unauthorized reuse of the complete implementation.
+
+For **legitimate academic, research, or project-related access** to the full source code, please contact:
+
+- **Email:** bhuvankumarr2004@gmail.com  
+- **Phone:** +91 86606 877802
+
+
+
 ---
 
 ## 📑 Table of Contents
