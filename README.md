@@ -6,7 +6,7 @@ A production-ready, full-stack web application that uses **Machine Learning** to
 
 ## ⚠️ IMPORTANT NOTICE
 
-The `app.py` file within the `ml` directory has been **intentionally removed** to protect the project’s intellectual work and to prevent unauthorized reuse of the complete implementation.
+The `app.py` file within the `ml-folder` directory has been **intentionally removed** to protect the project’s intellectual work and to prevent unauthorized reuse of the complete implementation.
 
 For **legitimate academic, research, or project-related access** to the full source code, please contact:
 
